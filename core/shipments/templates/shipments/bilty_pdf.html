@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        @page { size: A4; margin: 1cm; }
+        body { font-family: 'Helvetica', sans-serif; color: #333; line-height: 1.4; }
+        .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+        .section-title { background: #eee; padding: 5px; font-weight: bold; text-transform: uppercase; font-size: 11px; margin-top: 15px; border-left: 5px solid #000; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; }
+        th { background-color: #f9f9f9; width: 30%; }
+        .footer { margin-top: 30px; font-size: 10px; text-align: center; color: #777; border-top: 1px solid #eee; padding-top: 10px; }
+        .stamp { margin-top: 20px; text-align: right; font-weight: bold; font-size: 12px; }
+        .highlight { color: #000; font-weight: bold; }
+        .office-section { margin-top: 30px; border: 1px dashed #999; padding: 10px; background-color: #fafafa; }
+        .company-name { font-size: 14px; color: #d32f2f; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1 style="margin: 0; color: #000; font-size: 24px;">TRANSPORTFLOW LOGISTICS</h1>
+        <p style="margin: 5px 0;">Goods Receipt / Bilty - <span class="highlight">{{ s.bilty_number }}</span></p>
+    </div>
+
+    <table style="border: none; margin-bottom: 10px;">
+        <tr style="border: none;">
+            <td style="border: none; width: 50%;">
+                <strong>Date:</strong> {{ s.created_at|date:"d F Y" }}<br>
+                <strong>Vehicle No:</strong> {{ s.vehicle.registration_number }}<br>
+                <strong>Driver:</strong> {{ s.driver.name }}
+            </td>
+            <td style="border: none; text-align: right;">
+                <strong>Distance:</strong> {{ s.distance_km }} KM<br>
+                <strong>Status:</strong> <span class="highlight">{% if s.is_paid %}PAID{% else %}PENDING{% endif %}</span>
+            </td>
+        </tr>
+    </table>
+
+    <div class="section-title">Consignment Route & Parties</div>
+    <table style="border: none;">
+        <tr style="border: none;">
+            <td style="border: 1px solid #ccc; width: 50%; vertical-align: top;">
+                <strong style="color: #555;">FROM (Consignor):</strong><br>
+                <div class="company-name highlight">{{ s.consignor_name }}</div>
+                <div style="margin-top: 5px;"><strong>Location:</strong> {{ s.origin }}</div>
+            </td>
+            <td style="border: 1px solid #ccc; width: 50%; vertical-align: top;">
+                <strong style="color: #555;">TO (Consignee):</strong><br>
+                <div class="company-name highlight">{{ s.consignee_name }}</div>
+                <div style="margin-top: 5px;"><strong>Location:</strong> {{ s.destination }}</div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="section-title">Material Details</div>
+    <table>
+        <tr>
+            <th>Material Description</th>
+            <td>{{ s.material_name }}</td>
+        </tr>
+        <tr>
+            <th>Booking Type</th>
+            <td>{{ s.get_booking_type_display }}</td>
+        </tr>
+        <tr>
+            <th>Delivery Mode</th>
+            <td>{{ s.get_delivery_type_display }}</td>
+        </tr>
+    </table>
+
+    <div class="section-title">Weight & Billing (INR)</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Weight (Tonnes)</th>
+                <th>Rate per Tonne</th>
+                <th style="text-align: right;">Total Freight</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ s.weight_tonnes }} MT</td>
+                <td>₹{{ s.rate_per_tonne }}</td>
+                <td style="text-align: right;" class="highlight">₹{{ s.total_freight }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="office-section">
+        <div class="section-title" style="margin-top: 0; background: #d1d1d1;">Trip Expense Details (Internal Office Copy)</div>
+        <table style="background: white;">
+            <tr>
+                <td style="width: 70%;">Diesel Expenses:</td>
+                <td style="text-align: right;">₹{{ s.diesel_expenses }}</td>
+            </tr>
+            <tr>
+                <td>Toll & Border Charges:</td>
+                <td style="text-align: right;">₹{{ s.toll_expenses }}</td>
+            </tr>
+            <tr>
+                <td>Driver Food & Allowance:</td>
+                <td style="text-align: right;">₹{{ s.driver_allowance }}</td>
+            </tr>
+            <tr>
+                <td>Other Miscellaneous Expenses:</td>
+                <td style="text-align: right;">₹{{ s.other_expenses }}</td>
+            </tr>
+            <tr style="background-color: #eee; font-weight: bold;">
+                <td>Total Trip Purchase (Cost):</td>
+                <td style="text-align: right;">₹{{ s.purchase_cost }}</td>
+            </tr>
+            <tr style="font-weight: bold; color: green;">
+                <td>Net Profit on this Trip:</td>
+                <td style="text-align: right;">₹{{ s.net_profit }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div style="margin-top: 15px; font-size: 10px;">
+        <p><strong>Terms & Conditions:</strong><br>
+        1. Material is booked at owner's risk. 2. Delivery as per <strong>{{ s.get_delivery_type_display }}</strong> option. 3. All disputes subject to local jurisdiction.</p>
+    </div>
+
+    <div class="stamp">
+        <br>
+        For TransportFlow Logistics<br>
+        <span style="font-size: 10px; font-weight: normal;">(Authorized Signatory)</span>
+    </div>
+
+    <div class="footer">
+        Generated electronically by TransportFlow ERP on {% now "d-m-Y H:i" %}. No signature required.
+    </div>
+
+</body>
+</html>
