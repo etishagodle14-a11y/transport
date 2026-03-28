@@ -16,33 +16,13 @@
         .table-hover tbody tr:hover { background-color: #f8f9fa; }
 
         /* --- Dark Mode CSS --- */
-        body.dark-mode {
-            background-color: #1a1a1a !important;
-            color: #e0e0e0 !important;
-        }
-        .dark-mode .card {
-            background-color: #2d2d2d !important;
-            color: white !important;
-            border: 1px solid #444 !important;
-        }
-        .dark-mode .table {
-            color: #e0e0e0 !important;
-        }
-        .dark-mode .table-light {
-            background-color: #3d3d3d !important;
-            color: white !important;
-        }
-        .dark-mode .navbar {
-            background-color: #000 !important;
-        }
-        .dark-mode .form-label-sm {
-            color: #aaa;
-        }
-        .dark-mode input, .dark-mode select {
-            background-color: #333 !important;
-            color: white !important;
-            border-color: #555 !important;
-        }
+        body.dark-mode { background-color: #1a1a1a !important; color: #e0e0e0 !important; }
+        .dark-mode .card { background-color: #2d2d2d !important; color: white !important; border: 1px solid #444 !important; }
+        .dark-mode .table { color: #e0e0e0 !important; }
+        .dark-mode .table-light { background-color: #3d3d3d !important; color: white !important; }
+        .dark-mode .navbar { background-color: #000 !important; }
+        .dark-mode .form-label-sm { color: #aaa; }
+        .dark-mode input, .dark-mode select { background-color: #333 !important; color: white !important; border-color: #555 !important; }
     </style>
 </head>
 <body class="bg-light">
@@ -56,7 +36,6 @@
                 <button id="darkModeToggle" class="btn btn-sm btn-outline-warning me-3">
                     <i class="fas fa-moon"></i> Dark Mode
                 </button>
-
                 <span class="me-3 d-none d-md-inline"><i class="fas fa-calendar-alt me-1"></i> {% now "d M Y" %}</span>
                 {% if user.is_authenticated %}
                     <span class="me-3 text-warning">Hi, {{ user.username }}</span>
@@ -74,13 +53,29 @@
 
     <div class="container">
         
+        {% if form.errors %}
+        <div class="alert alert-danger shadow-sm border-0 mb-4">
+            <h6 class="fw-bold"><i class="fas fa-exclamation-triangle me-2"></i> Form mein kuch galti hai:</h6>
+            <ul class="mb-0 small">
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
         {% if user.is_authenticated %}
         <div class="row g-3 mb-4">
             <div class="col-md-3 col-6">
                 <div class="card card-analytics bg-white shadow-sm border-start border-primary border-5">
                     <div class="card-body p-3">
                         <p class="text-muted small mb-1 fw-bold">TOTAL REVENUE</p>
-                        <h4 class="mb-0 text-primary">₹{{ total_revenue }}</h4>
+                        <h4 class="mb-0 text-primary">₹{{ total_revenue|default:"0" }}</h4>
                     </div>
                 </div>
             </div>
@@ -88,7 +83,7 @@
                 <div class="card card-analytics bg-white shadow-sm border-start border-danger border-5">
                     <div class="card-body p-3">
                         <p class="text-muted small mb-1 fw-bold">TOTAL EXPENSE</p>
-                        <h4 class="mb-0 text-danger">₹{{ total_expense }}</h4>
+                        <h4 class="mb-0 text-danger">₹{{ total_expense|default:"0" }}</h4>
                     </div>
                 </div>
             </div>
@@ -96,7 +91,7 @@
                 <div class="card card-analytics bg-white shadow-sm border-start border-success border-5">
                     <div class="card-body p-3">
                         <p class="text-muted small mb-1 fw-bold">NET PROFIT</p>
-                        <h4 class="mb-0 text-success">₹{{ total_net_profit }}</h4>
+                        <h4 class="mb-0 text-success">₹{{ total_net_profit|default:"0" }}</h4>
                     </div>
                 </div>
             </div>
@@ -104,19 +99,12 @@
                 <div class="card card-analytics bg-white shadow-sm border-start border-warning border-5">
                     <div class="card-body p-3">
                         <p class="text-muted small mb-1 fw-bold">PENDING</p>
-                        <h4 class="mb-0 text-warning">₹{{ pending_amount }}</h4>
+                        <h4 class="mb-0 text-warning">₹{{ pending_amount|default:"0" }}</h4>
                     </div>
                 </div>
             </div>
         </div>
-        {% else %}
-        <div class="alert alert-warning shadow-sm border-0 d-flex justify-content-between align-items-center mb-4">
-            <span><i class="fas fa-lock me-2"></i> Financial analytics and booking tools are hidden. Please login to manage records.</span>
-            <a href="{% url 'login' %}" class="btn btn-sm btn-dark px-4">Login Now</a>
-        </div>
-        {% endif %}
 
-        {% if user.is_authenticated %}
         <div class="card shadow-sm border-0 mb-5">
             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                 <span class="fw-bold"><i class="fas fa-plus-circle me-1"></i> New Booking Entry</span>
@@ -156,6 +144,8 @@
                         <div class="row g-1 expense-input">
                             <div class="col-6 mb-1">{{ form.diesel_expenses }}</div>
                             <div class="col-6 mb-1">{{ form.toll_expenses }}</div>
+                            <div class="col-6 mb-1">{{ form.driver_allowance }}</div>
+                            <div class="col-6 mb-1">{{ form.other_expenses }}</div>
                         </div>
                         <div class="form-check mt-2 small">
                             {{ form.is_paid }} <label class="form-check-label">Mark as Paid</label>
@@ -220,14 +210,11 @@
                                 <td class="text-center pe-3">
                                     <div class="btn-group btn-group-sm shadow-sm">
                                         <a href="{% url 'download_bilty' s.id %}" class="btn btn-outline-danger" title="Download PDF"><i class="fas fa-file-pdf"></i></a>
-                                        
                                         {% if user.is_authenticated %}
                                             <a href="{% url 'edit_shipment' s.id %}" class="btn btn-outline-warning" title="Edit Record"><i class="fas fa-edit text-dark"></i></a>
-                                            
                                             {% if not s.is_paid %}
                                             <a href="{% url 'mark_as_paid' s.id %}" class="btn btn-outline-success" title="Mark Paid"><i class="fas fa-check-double"></i></a>
                                             {% endif %}
-                                            
                                             <a href="{% url 'delete_shipment' s.id %}" class="btn btn-outline-secondary" onclick="return confirm('Kya aap sach mein ise delete karna chahte hain?')" title="Delete"><i class="fas fa-trash-alt"></i></a>
                                         {% endif %}
                                     </div>
@@ -251,7 +238,6 @@
         const toggleBtn = document.getElementById('darkModeToggle');
         const body = document.body;
 
-        // Page load par check karein
         if (localStorage.getItem('dark-mode') === 'enabled') {
             body.classList.add('dark-mode');
             toggleBtn.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
@@ -259,7 +245,6 @@
 
         toggleBtn.addEventListener('click', () => {
             body.classList.toggle('dark-mode');
-            
             if (body.classList.contains('dark-mode')) {
                 localStorage.setItem('dark-mode', 'enabled');
                 toggleBtn.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
