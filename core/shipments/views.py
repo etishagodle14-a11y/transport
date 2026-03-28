@@ -22,7 +22,6 @@ def signup(request):
             return redirect('dashboard')
     else:
         form = UserCreationForm()
-    # Aapka custom path: shipments/signup.html
     return render(request, 'shipments/signup.html', {'form': form})
 
 
@@ -48,7 +47,7 @@ def dashboard(request):
     form = ShipmentForm()
     if request.method == 'POST':
         if not request.user.is_authenticated:
-            return redirect('login') # Bina login entry allowed nahi hai
+            return redirect('login') 
         
         form = ShipmentForm(request.POST)
         if form.is_valid():
@@ -82,10 +81,29 @@ def dashboard(request):
 
 
 # ==========================================
-# 3. SHIPMENT OPERATIONS (Secure Views)
+# 3. SHIPMENT OPERATIONS (Edit, Delete, PDF)
 # ==========================================
 
-# PDF Download View
+# 1. EDIT SHIPMENT (Naya Function jo aapne manga tha)
+@login_required
+def edit_shipment(request, shipment_id):
+    # Purani entry dhoondega, agar nahi mili toh 404 error dega
+    shipment = get_object_or_404(Shipment, id=shipment_id)
+    
+    if request.method == 'POST':
+        # 'instance=shipment' ka matlab hai ki naya data purane data ki jagah save hoga
+        form = ShipmentForm(request.POST, instance=shipment)
+        if form.is_valid():
+            form.save()
+            return redirect('dashboard')
+    else:
+        # Form mein purana data pehle se bhara hua aayega
+        form = ShipmentForm(instance=shipment)
+    
+    return render(request, 'shipments/edit_shipment.html', {'form': form, 'shipment': shipment})
+
+
+# 2. PDF Download View
 def download_bilty(request, shipment_id):
     try:
         shipment = Shipment.objects.get(id=shipment_id)
@@ -106,7 +124,7 @@ def download_bilty(request, shipment_id):
         return HttpResponse('Shipment not found', status=404)
 
 
-# Mark As Paid (Login required for security)
+# 3. Mark As Paid
 @login_required
 def mark_as_paid(request, shipment_id):
     shipment = get_object_or_404(Shipment, id=shipment_id)
@@ -115,7 +133,7 @@ def mark_as_paid(request, shipment_id):
     return redirect('dashboard')
 
 
-# Delete Shipment (Login required for security)
+# 4. Delete Shipment
 @login_required
 def delete_shipment(request, shipment_id):
     shipment = get_object_or_404(Shipment, id=shipment_id)
