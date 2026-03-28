@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 from fleet.models import Vehicle, Driver 
 
 class Shipment(models.Model):
@@ -6,8 +7,7 @@ class Shipment(models.Model):
     bilty_number = models.CharField(max_length=20, unique=True, editable=False)
     material_name = models.CharField(max_length=100)
     
-    # --- COMPANY DETAILS (Naya Addition) ---
-    
+    # --- COMPANY DETAILS ---
     consignor_name = models.CharField(max_length=200, default="Unknown", verbose_name="Sender Company") 
     consignee_name = models.CharField(max_length=200, default="Unknown", verbose_name="Receiver Company")
 
@@ -36,7 +36,7 @@ class Shipment(models.Model):
     # --- ACCOUNTS & CALCULATIONS ---
     weight_tonnes = models.FloatField(default=0)
     rate_per_tonne = models.FloatField(default=0)
-    total_freight = models.FloatField(default=0, editable=False) # Total Sale
+    total_freight = models.FloatField(default=0, editable=False) # Total Sale (Automatic)
 
     # Expense Fields (Purchase breakdown)
     diesel_expenses = models.FloatField(default=0)
@@ -45,18 +45,26 @@ class Shipment(models.Model):
     other_expenses = models.FloatField(default=0)
     
     # Automatic Sum Fields
-    purchase_cost = models.FloatField(default=0, editable=False) # Total Expense
-    net_profit = models.FloatField(default=0, editable=False)   # Final Profit
+    purchase_cost = models.FloatField(default=0, editable=False) # Total Expense (Automatic)
+    net_profit = models.FloatField(default=0, editable=False)   # Final Profit (Automatic)
 
     # --- STATUS & TIME ---
     is_paid = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # --- BACKEND LOGIC (SAVE METHOD OVERRIDE) ---
     def save(self, *args, **kwargs):
-        # 1. Automatic Freight Calculation (Sale)
+        # 1. Validation: Backend level par galti rokna
+        if self.weight_tonnes < 0 or self.rate_per_tonne < 0:
+            raise ValidationError("Weight or Rate cannot be negative!")
+        
+        if self.diesel_expenses < 0 or self.toll_expenses < 0:
+            raise ValidationError("Expenses cannot be negative!")
+
+        # 2. Calculation: Python math for Freight
         self.total_freight = float(self.weight_tonnes or 0) * float(self.rate_per_tonne or 0)
         
-        # 2. Automatic Purchase Cost Calculation (Total Expenses)
+        # 3. Calculation: Purchase Cost (Total Expenses)
         self.purchase_cost = (
             float(self.diesel_expenses or 0) + 
             float(self.toll_expenses or 0) + 
@@ -64,10 +72,11 @@ class Shipment(models.Model):
             float(self.other_expenses or 0)
         )
         
-        # 3. Automatic Profit Calculation
+        # 4. Calculation: Net Profit
         self.net_profit = self.total_freight - self.purchase_cost
         
-        # 4. Automatic Bilty Number Generation
+        # 5. ID-Based Bilty Number Generation
+        # Naya record hai to hi Bilty generate karein
         if not self.bilty_number:
             last_shipment = Shipment.objects.all().order_by('id').last()
             if not last_shipment:
@@ -76,6 +85,7 @@ class Shipment(models.Model):
                 new_id = last_shipment.id + 1
                 self.bilty_number = f'TF-{new_id:03d}'
         
+        # 6. Final Save to Database
         super().save(*args, **kwargs)
 
     def __str__(self):

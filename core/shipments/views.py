@@ -10,7 +10,7 @@ from .models import Shipment
 from .forms import ShipmentForm
 
 # ==========================================
-# 1. AUTHENTICATION VIEWS (Signup)
+# 1. AUTHENTICATION VIEWS
 # ==========================================
 
 def signup(request):
@@ -18,7 +18,7 @@ def signup(request):
         form = UserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            login(request, user)  # Account banane ke baad auto-login
+            login(request, user)
             return redirect('dashboard')
     else:
         form = UserCreationForm()
@@ -26,24 +26,27 @@ def signup(request):
 
 
 # ==========================================
-# 2. MAIN DASHBOARD (Public + Private Logic)
+# 2. MAIN DASHBOARD (With Advanced Analytics)
 # ==========================================
 
 def dashboard(request):
-    # --- SEARCH LOGIC ---
-    query = request.GET.get('q')
+    # --- SEARCH & FILTER LOGIC ---
+    query = request.GET.get('q', '')
+    
+    # Backend Power: Complex Q filters for searching across multiple fields
+    shipments = Shipment.objects.all().order_by('-created_at')
+    
     if query:
-        shipments = Shipment.objects.filter(
+        shipments = shipments.filter(
             Q(bilty_number__icontains=query) | 
             Q(material_name__icontains=query) |
             Q(consignor_name__icontains=query) |
+            Q(consignee_name__icontains=query) |
             Q(origin__icontains=query) |
             Q(destination__icontains=query)
-        ).order_by('-created_at')
-    else:
-        shipments = Shipment.objects.all().order_by('-created_at')
+        )
 
-    # --- NEW BOOKING FORM (Sirf Login User ke liye) ---
+    # --- FORM HANDLING ---
     form = ShipmentForm()
     if request.method == 'POST':
         if not request.user.is_authenticated:
@@ -51,7 +54,7 @@ def dashboard(request):
         
         form = ShipmentForm(request.POST)
         if form.is_valid():
-            form.save()
+            form.save() # Hamara model ka save() method calculations handle kar lega
             return redirect('dashboard')
 
     # --- INITIAL CONTEXT ---
@@ -61,13 +64,17 @@ def dashboard(request):
         'query': query,
     }
 
-    # --- ANALYTICS (Sirf Login User ke liye) ---
+    # --- BACKEND ANALYTICS (Aggregation) ---
+    # Sirf login user ko total financial data dikhega
     if request.user.is_authenticated:
+        # Ek hi query mein saare stats nikalna (Performance efficient)
         analytics = shipments.aggregate(
             total_rev=Sum('total_freight'),
             total_exp=Sum('purchase_cost'),
             total_prof=Sum('net_profit')
         )
+        
+        # Pending dues calculation
         pending = shipments.filter(is_paid=False).aggregate(total_pend=Sum('total_freight'))
 
         context.update({
@@ -84,26 +91,22 @@ def dashboard(request):
 # 3. SHIPMENT OPERATIONS (Edit, Delete, PDF)
 # ==========================================
 
-# 1. EDIT SHIPMENT (Naya Function jo aapne manga tha)
 @login_required
 def edit_shipment(request, shipment_id):
-    # Purani entry dhoondega, agar nahi mili toh 404 error dega
     shipment = get_object_or_404(Shipment, id=shipment_id)
     
     if request.method == 'POST':
-        # 'instance=shipment' ka matlab hai ki naya data purane data ki jagah save hoga
+        # instance=shipment zaroori hai update karne ke liye
         form = ShipmentForm(request.POST, instance=shipment)
         if form.is_valid():
-            form.save()
+            form.save() # Automatic calculations yahan bhi trigger hongi
             return redirect('dashboard')
     else:
-        # Form mein purana data pehle se bhara hua aayega
         form = ShipmentForm(instance=shipment)
     
     return render(request, 'shipments/edit_shipment.html', {'form': form, 'shipment': shipment})
 
 
-# 2. PDF Download View
 def download_bilty(request, shipment_id):
     try:
         shipment = Shipment.objects.get(id=shipment_id)
@@ -124,7 +127,6 @@ def download_bilty(request, shipment_id):
         return HttpResponse('Shipment not found', status=404)
 
 
-# 3. Mark As Paid
 @login_required
 def mark_as_paid(request, shipment_id):
     shipment = get_object_or_404(Shipment, id=shipment_id)
@@ -133,7 +135,6 @@ def mark_as_paid(request, shipment_id):
     return redirect('dashboard')
 
 
-# 4. Delete Shipment
 @login_required
 def delete_shipment(request, shipment_id):
     shipment = get_object_or_404(Shipment, id=shipment_id)
