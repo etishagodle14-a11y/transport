@@ -30,10 +30,7 @@ def signup(request):
 # ==========================================
 
 def dashboard(request):
-    # --- SEARCH & FILTER LOGIC ---
     query = request.GET.get('q', '')
-    
-    # Backend Power: Complex Q filters for searching across multiple fields
     shipments = Shipment.objects.all().order_by('-created_at')
     
     if query:
@@ -46,7 +43,6 @@ def dashboard(request):
             Q(destination__icontains=query)
         )
 
-    # --- FORM HANDLING ---
     form = ShipmentForm()
     if request.method == 'POST':
         if not request.user.is_authenticated:
@@ -54,27 +50,22 @@ def dashboard(request):
         
         form = ShipmentForm(request.POST)
         if form.is_valid():
-            form.save() # Hamara model ka save() method calculations handle kar lega
+            form.save() 
             return redirect('dashboard')
 
-    # --- INITIAL CONTEXT ---
     context = {
         'shipments': shipments,
         'form': form,
         'query': query,
     }
 
-    # --- BACKEND ANALYTICS (Aggregation) ---
-    # Sirf login user ko total financial data dikhega
     if request.user.is_authenticated:
-        # Ek hi query mein saare stats nikalna (Performance efficient)
         analytics = shipments.aggregate(
             total_rev=Sum('total_freight'),
             total_exp=Sum('purchase_cost'),
             total_prof=Sum('net_profit')
         )
         
-        # Pending dues calculation
         pending = shipments.filter(is_paid=False).aggregate(total_pend=Sum('total_freight'))
 
         context.update({
@@ -96,10 +87,9 @@ def edit_shipment(request, shipment_id):
     shipment = get_object_or_404(Shipment, id=shipment_id)
     
     if request.method == 'POST':
-        # instance=shipment zaroori hai update karne ke liye
         form = ShipmentForm(request.POST, instance=shipment)
         if form.is_valid():
-            form.save() # Automatic calculations yahan bhi trigger hongi
+            form.save() 
             return redirect('dashboard')
     else:
         form = ShipmentForm(instance=shipment)
@@ -107,11 +97,14 @@ def edit_shipment(request, shipment_id):
     return render(request, 'shipments/edit_shipment.html', {'form': form, 'shipment': shipment})
 
 
+# --- YE WALA SECTION VEHICLE NO. FIX KARTA HAI ---
 def download_bilty(request, shipment_id):
     try:
-        shipment = Shipment.objects.get(id=shipment_id)
+        shipment = get_object_or_404(Shipment, id=shipment_id)
         template_path = 'shipments/bilty_pdf.html' 
-        context = {'s': shipment}
+        
+        # 's' ki jagah 'shipment' use kiya hai taaki template se match ho
+        context = {'shipment': shipment}
         
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="Bilty_{shipment.bilty_number}.pdf"'
@@ -123,8 +116,8 @@ def download_bilty(request, shipment_id):
         if pisa_status.err:
             return HttpResponse('Error generating PDF', status=500)
         return response
-    except Shipment.DoesNotExist:
-        return HttpResponse('Shipment not found', status=404)
+    except Exception as e:
+        return HttpResponse(f'Error: {str(e)}', status=404)
 
 
 @login_required
