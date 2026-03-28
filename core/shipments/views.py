@@ -97,14 +97,14 @@ def edit_shipment(request, shipment_id):
     return render(request, 'shipments/edit_shipment.html', {'form': form, 'shipment': shipment})
 
 
-# --- YE WALA SECTION VEHICLE NO. FIX KARTA HAI ---
+# --- PDF GENERATION (Sahi context 's' ke saath) ---
 def download_bilty(request, shipment_id):
     try:
         shipment = get_object_or_404(Shipment, id=shipment_id)
         template_path = 'shipments/bilty_pdf.html' 
         
-        # 's' ki jagah 'shipment' use kiya hai taaki template se match ho
-        context = {'shipment': shipment}
+        # 's' variable hi pass kiya hai taaki aapka template crash na ho
+        context = {'s': shipment}
         
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="Bilty_{shipment.bilty_number}.pdf"'

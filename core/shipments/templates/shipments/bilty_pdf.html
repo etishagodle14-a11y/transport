@@ -27,13 +27,13 @@
         <tr style="border: none;">
             <td style="border: none; width: 50%;">
                 <strong>Date:</strong> {{ s.created_at|date:"d F Y" }}<br>
-               <strong>Vehicle No:</strong> 
-                    {% if shipment.vehicle.vehicle_number %}
-                    {{ shipment.vehicle.vehicle_number }}
-                    {% else %}
-                   {{ shipment.vehicle }}
-                   {% endif %}
-            <br>
+                <strong>Vehicle No:</strong> 
+                {% if s.vehicle.vehicle_number %}
+                    {{ s.vehicle.vehicle_number }}
+                {% else %}
+                    {{ s.vehicle }}
+                {% endif %}
+                <br>
                 <strong>Driver:</strong> {{ s.driver.name }}
             </td>
             <td style="border: none; text-align: right;">
