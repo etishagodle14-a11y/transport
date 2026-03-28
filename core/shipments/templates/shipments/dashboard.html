@@ -112,19 +112,26 @@
             <div class="card-body">
                 <form method="POST" class="row g-3">
                     {% csrf_token %}
+                    
                     <div class="col-md-3">
                         <label class="form-label-sm">Parties (Sender/Receiver)</label>
                         <div class="mb-2">{{ form.consignor_name }}</div>
-                        <div>{{ form.consignee_name }}</div>
+                        <div class="mb-2">{{ form.consignee_name }}</div>
+                        
+                        <label class="form-label-sm mt-1 text-primary">Booking & Delivery Type</label>
+                        <div class="mb-1">{{ form.booking_type }}</div>
+                        <div>{{ form.delivery_type }}</div>
                     </div>
+
                     <div class="col-md-3">
                         <label class="form-label-sm">Material & Fleet</label>
                         {{ form.material_name }}
                         <div class="mt-2">{{ form.vehicle }}</div>
                         <div class="mt-2">{{ form.driver }}</div>
                     </div>
+
                     <div class="col-md-3">
-                        <label class="form-label-sm">Route (From/To/KM)</label>
+                        <label class="form-label-sm">Route (Origin/Destination/KM)</label>
                         <div class="input-group input-group-sm mb-1">
                             {{ form.origin }}
                             <span class="input-group-text px-1">to</span>
@@ -135,6 +142,7 @@
                             {{ form.distance_km }} 
                         </div>
                     </div>
+
                     <div class="col-md-3">
                         <label class="form-label-sm">Accounts & Expenses</label>
                         <div class="input-group input-group-sm mb-2">
@@ -151,6 +159,7 @@
                             {{ form.is_paid }} <label class="form-check-label">Mark as Paid</label>
                         </div>
                     </div>
+
                     <div class="col-12 text-end mt-3 border-top pt-3">
                         <button type="submit" class="btn btn-success px-5 fw-bold shadow-sm">Save & Generate Bilty</button>
                     </div>
